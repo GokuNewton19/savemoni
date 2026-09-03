@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cedi — Expense Tracker 💰</title>
+<style>
+  :root{
+    --radius-lg: 28px;
+    --radius-md: 20px;
+    --radius-sm: 14px;
+    --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  [data-theme="light"]{
+    --bg:#f0ece6;
+    --surface:#f0ece6;
+    --text:#323022;
+    --text-soft:#86736b;
+    --shadow-d: rgba(198, 187, 163, 0.6);
+    --shadow-l: rgba(255, 255, 255, 0.9);
+    --accent:#f0ba6f;
+    --accent-soft:#eae7fc;
+    --income:#1fab6f;
+    --expense:#e0603f;
+    --satisfied:#1fab6f;
+    --needed:#3d7bf0;
+    --regretted:#e0603f;
+    --emergency:#d63550;
+    --line: rgba(44,49,66,0.08);
+  }
+  [data-theme="dark"]{
+    --bg:#242832;
+    --surface:#242832;
+    --text:#e9ebf3;
+    --text-soft:#9096ab;
+    --shadow-d: rgba(15,17,22,0.75);
+    --shadow-l: rgba(58,64,80,0.55);
+    --accent:#9a8dff;
+    --accent-soft:#33304f;
+    --income:#38c98d;
+    --expense:#f0805c;
+    --satisfied:#38c98d;
+    --needed:#5b96ff;
+    --regretted:#f0805c;
+    --emergency:#ff5c78;
+    --line: rgba(255,255,255,0.06);
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family: 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif;
+    min-height:100vh;
+    transition: background .4s var(--ease), color .4s var(--ease);
+    overflow-x:hidden;
+  }
+
+  .app{
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 20px 18px 60px;
+  }
+
+  /* ---------- Top bar ---------- */
+  .topbar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:18px;
+  }
+  .brand{display:flex;align-items:center;gap:10px;}
+  .brand-mark{
+    width:42px;height:42px;border-radius:16px;
+    background:var(--bg);
+    box-shadow: 6px 6px 12px var(--shadow-d), -6px -6px 12px var(--shadow-l);
+    display:flex;align-items:center;justify-content:center;
+    font-size:20px;
+    color:var(--accent);
+    font-weight:700;
+  }
+  .brand h1{font-size:19px;margin:0;font-weight:700;letter-spacing:.2px;}
+  .brand p{margin:0;font-size:12px;color:var(--text-soft);}
+
+  .icon-btn{
+    width:44px;height:44px;border-radius:16px;border:none;
+    background:var(--bg);
+    box-shadow: 5px 5px 10px var(--shadow-d), -5px -5px 10px var(--shadow-l);
+    cursor:pointer;
+    font-size:18px;
+    display:flex;align-items:center;justify-content:center;
+    color:var(--text);
+    transition: transform .18s var(--ease), box-shadow .18s var(--ease);
+  }
+  .icon-btn:active{
+    transform: scale(.92);
+    box-shadow: inset 4px 4px 8px var(--shadow-d), inset -4px -4px 8px var(--shadow-l);
+  }
+
+  /* ---------- Nav ---------- */
+  .menu{
+    display:flex;
+    gap:10px;
+    background:var(--bg);
+    padding:8px;
+    border-radius: var(--radius-md);
+    box-shadow: inset 5px 5px 10px var(--shadow-d), inset -5px -5px 10px var(--shadow-l);
+    margin-bottom: 22px;
+  }
+  .nav-btn{
+    flex:1;
+    padding:11px 8px;
+    border:none;
+    background:transparent;
+    color:var(--text-soft);
+    font-size:13.5px;
+    font-weight:600;
+    border-radius: var(--radius-sm);
+    cursor:pointer;
+    transition: all .25s var(--ease);
+  }
+  .nav-btn.active{
+    background:var(--bg);
+    color:var(--accent);
+    box-shadow: 4px 4px 8px var(--shadow-d), -4px -4px 8px var(--shadow-l);
+  }
+  .nav-btn:active{ transform: scale(.96); }
+
+  /* ---------- Views / transitions ---------- */
+  .view{
+    display:none;
+    opacity:0;
+    transform: translateY(10px);
+  }
+  .view.active{ display:block; }
+  .view.enter{ opacity:1; transform:translateY(0); transition: opacity .35s var(--ease), transform .35s var(--ease); }
+  .view.leave{ opacity:0; transform:translateY(-8px); transition: opacity .2s var(--ease), transform .2s var(--ease); }
+
+  /* ---------- Cards / neumorphism primitives ---------- */
+  .neu-card{
+    background:var(--bg);
+    border-radius: var(--radius-lg);
+    box-shadow: 8px 8px 18px var(--shadow-d), -8px -8px 18px var(--shadow-l);
+    padding: 22px;
+    margin-bottom: 18px;
+  }
+  .neu-flat{
+    background:var(--bg);
+    border-radius: var(--radius-md);
+    box-shadow: 6px 6px 14px var(--shadow-d), -6px -6px 14px var(--shadow-l);
+    padding: 16px;
+  }
+
+  h2.section-title{
+    font-size:15px;
+    font-weight:700;
+    margin: 2px 0 16px;
+    color:var(--text);
+  }
+  .sub{ color:var(--text-soft); font-size:12.5px; margin:-10px 0 16px; }
+
+  /* ---------- Form elements ---------- */
+  label{ font-size:12.5px; color:var(--text-soft); font-weight:600; display:block; margin-bottom:7px; }
+  .field{ margin-bottom:16px; }
+
+  input[type=text], input[type=number], input[type=date], select{
+    width:100%;
+    padding:13px 15px;
+    border:none;
+    border-radius: var(--radius-sm);
+    background:var(--bg);
+    color:var(--text);
+    font-size:14.5px;
+    box-shadow: inset 5px 5px 10px var(--shadow-d), inset -5px -5px 10px var(--shadow-l);
+    outline:none;
+    transition: box-shadow .2s var(--ease);
+    font-family:inherit;
+  }
+  input:focus, select:focus{ box-shadow: inset 6px 6px 12px var(--shadow-d), inset -6px -6px 12px var(--shadow-l), 0 0 0 2px var(--accent); }
+
+  .type-toggle{ display:flex; gap:10px; margin-bottom:16px; }
+  .type-toggle button{
+    flex:1; padding:13px 8px; border:none; border-radius: var(--radius-sm);
+    background:var(--bg); color:var(--text-soft); font-weight:700; font-size:13.5px;
+    box-shadow: 5px 5px 10px var(--shadow-d), -5px -5px 10px var(--shadow-l);
+    cursor:pointer; transition: all .22s var(--ease);
+  }
+  .type-toggle button.active[data-t="income"]{ color:var(--income); box-shadow: inset 4px 4px 9px var(--shadow-d), inset -4px -4px 9px var(--shadow-l);}
+  .type-toggle button.active[data-t="expense"]{ color:var(--expense); box-shadow: inset 4px 4px 9px var(--shadow-d), inset -4px -4px 9px var(--shadow-l);}
+  .type-toggle button:active{ transform:scale(.96); }
+
+  .chip-row{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
+  .chip{
+    padding:9px 14px; border-radius:999px; border:none; cursor:pointer;
+    background:var(--bg); color:var(--text-soft); font-size:12.5px; font-weight:700;
+    box-shadow: 4px 4px 8px var(--shadow-d), -4px -4px 8px var(--shadow-l);
+    transition: all .2s var(--ease);
+  }
+  .chip.active{ color:#fff; box-shadow: inset 3px 3px 6px rgba(0,0,0,.15); }
+  .chip[data-v="satisfied"].active{ background:var(--satisfied); }
+  .chip[data-v="needed"].active{ background:var(--needed); }
+  .chip[data-v="regretted"].active{ background:var(--regretted); }
+  .chip[data-v="emergency"].active{ background:var(--emergency); }
+  .chip:active{ transform:scale(.94); }
+
+  .btn-primary{
+    width:100%; padding:15px; border:none; border-radius: var(--radius-sm);
+    background: var(--accent); color:#fff; font-weight:700; font-size:14.5px;
+    cursor:pointer; box-shadow: 5px 5px 12px var(--shadow-d), -5px -5px 12px var(--shadow-l);
+    transition: transform .18s var(--ease), filter .18s var(--ease);
+  }
+  .btn-primary:active{ transform: scale(.97); filter:brightness(.94); }
+
+  .btn-ghost{
+    padding:11px 16px; border:none; border-radius: var(--radius-sm);
+    background:var(--bg); color:var(--text-soft); font-weight:700; font-size:12.5px;
+    cursor:pointer; box-shadow: 4px 4px 9px var(--shadow-d), -4px -4px 9px var(--shadow-l);
+    transition: all .18s var(--ease);
+  }
+  .btn-ghost:active{ transform:scale(.95); }
+  .btn-danger{ color:var(--emergency); }
+
+  .toast{
+    position:fixed; left:50%; bottom:26px; transform:translate(-50%,20px);
+    background:var(--bg); color:var(--text); padding:13px 22px; border-radius:999px;
+    box-shadow: 6px 6px 14px var(--shadow-d), -6px -6px 14px var(--shadow-l);
+    font-size:13px; font-weight:600; opacity:0; pointer-events:none;
+    transition: all .35s var(--ease); z-index:80;
+  }
+  .toast.show{ opacity:1; transform:translate(-50%,0); }
+
+  /* ---------- Calendar ---------- */
+  .cal-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+  .cal-head .month-label{ font-weight:700; font-size:15px; }
+  .cal-grid{ display:grid; grid-template-columns: repeat(7,1fr); gap:6px; }
+  .cal-dow{ text-align:center; font-size:10.5px; color:var(--text-soft); font-weight:700; padding-bottom:4px; }
+  .cal-cell{
+    aspect-ratio: 1/1; border-radius: 13px; background:var(--bg);
+    box-shadow: 3px 3px 7px var(--shadow-d), -3px -3px 7px var(--shadow-l);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    cursor:pointer; font-size:12.5px; font-weight:600; color:var(--text);
+    position:relative; transition: all .18s var(--ease);
+  }
+  .cal-cell.empty{ visibility:hidden; box-shadow:none; cursor:default; }
+  .cal-cell.today{ color:var(--accent); }
+  .cal-cell.selected{
+    box-shadow: inset 3px 3px 7px var(--shadow-d), inset -3px -3px 7px var(--shadow-l);
+    color:var(--accent);
+  }
+  .cal-cell:active{ transform: scale(.92); }
+  .cal-dots{ display:flex; gap:3px; margin-top:3px; }
+  .dot{ width:5px; height:5px; border-radius:50%; }
+  .dot.income{ background:var(--income); }
+  .dot.expense{ background:var(--expense); }
+
+  .day-panel{ margin-top:18px; }
+  .day-panel-head{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:14px; flex-wrap:wrap; gap:6px;}
+  .day-stat-row{ display:flex; gap:10px; margin-bottom:16px; }
+  .day-stat{ flex:1; text-align:center; padding:12px 8px; }
+  .day-stat .amt{ font-size:16px; font-weight:800; }
+  .day-stat .lbl{ font-size:10.5px; color:var(--text-soft); font-weight:700; margin-top:3px; }
+
+  .entry-row{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:13px 14px; border-radius: var(--radius-sm); margin-bottom:9px;
+    background:var(--bg); box-shadow: 3px 3px 8px var(--shadow-d), -3px -3px 8px var(--shadow-l);
+    cursor:pointer; transition: transform .15s var(--ease);
+  }
+  .entry-row:active{ transform: scale(.98); }
+  .entry-left{ display:flex; align-items:center; gap:10px; min-width:0; }
+  .entry-dot{ width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+  .entry-desc{ font-size:13.5px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .entry-tag{ font-size:10px; color:var(--text-soft); font-weight:700; text-transform:capitalize; }
+  .entry-amt{ font-size:13.5px; font-weight:800; white-space:nowrap; margin-left:10px; }
+  .empty-note{ color:var(--text-soft); font-size:13px; text-align:center; padding:22px 10px; }
+
+  /* ---------- Metrics ---------- */
+  .period-scroll{ display:flex; gap:8px; overflow-x:auto; padding-bottom:6px; margin:18px; }
+  .period-scroll::-webkit-scrollbar{ display:none; }
+  .period-btn{
+    flex-shrink:0; margin-top:6px; margin-bottom:6px; padding:10px 16px; border:none; border-radius:999px; cursor:pointer;
+    background:var(--bg); color:var(--text-soft); font-size:12.5px; font-weight:700;
+    box-shadow: 4px 4px 8px var(--shadow-d), -4px -4px 8px var(--shadow-l);
+    transition: all .2s var(--ease);
+  }
+  .period-btn.active{ color:#fff; background:var(--accent); box-shadow: inset 3px 3px 6px rgba(0,0,0,.15); }
+  .period-btn:active{ transform:scale(.95); }
+
+  .ratio-wrap{ display:flex; align-items:center; gap:22px; flex-wrap:wrap; }
+  .donut{ width:130px; height:130px; border-radius:50%; flex-shrink:0;
+    background: var(--bg);
+    box-shadow: 7px 7px 16px var(--shadow-d), -7px -7px 16px var(--shadow-l);
+    display:flex; align-items:center; justify-content:center; position:relative; }
+  .donut::before{
+    content:''; position:absolute; inset:0; border-radius:50%;
+    background: conic-gradient(var(--expense) calc(var(--pct,0)*1%), transparent 0);
+    -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 16px), #000 calc(100% - 15px));
+    mask: radial-gradient(farthest-side, transparent calc(100% - 16px), #000 calc(100% - 15px));
+    transition: background 0.6s var(--ease);
+  }
+  .donut-inner{ font-size:20px; font-weight:800; z-index:2; }
+  .donut-inner span{ display:block; font-size:10px; color:var(--text-soft); font-weight:700; margin-top:2px; }
+  .ratio-legend{ flex:1; min-width:160px; }
+  .legend-row{ display:flex; justify-content:space-between; align-items:center; padding:9px 0; border-bottom:1px solid var(--line); }
+  .legend-row:last-child{ border-bottom:none; }
+  .legend-left{ display:flex; align-items:center; gap:8px; font-size:13px; font-weight:600; color:var(--text-soft); }
+  .legend-dot{ width:9px; height:9px; border-radius:50%; }
+  .legend-val{ font-weight:800; font-size:13.5px; }
+
+  .breakdown-bars{ margin-top:6px; }
+  .bar-row{ margin-bottom:14px; }
+  .bar-row-top{ display:flex; justify-content:space-between; font-size:12.5px; font-weight:700; margin-bottom:6px; }
+  .bar-track{ height:11px; border-radius:999px; background:var(--bg); box-shadow: inset 3px 3px 6px var(--shadow-d), inset -3px -3px 6px var(--shadow-l); overflow:hidden; }
+  .bar-fill{ height:100%; border-radius:999px; transition: width .6s var(--ease); }
+
+  .suggest-row{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:13px 14px; border-radius: var(--radius-sm); margin-bottom:9px;
+    background:var(--bg); box-shadow: 3px 3px 8px var(--shadow-d), -3px -3px 8px var(--shadow-l);
+  }
+  .suggest-left .t{ font-size:13.5px; font-weight:700; }
+  .suggest-left .s{ font-size:11.5px; color:var(--text-soft); margin-top:2px; }
+  .suggest-badge{ font-size:11px; font-weight:800; color:var(--regretted); background:var(--accent-soft); padding:6px 10px; border-radius:999px; }
+
+  /* ---------- Modal ---------- */
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(20,22,30,.45); backdrop-filter: blur(2px);
+    display:flex; align-items:flex-end; justify-content:center; z-index:100;
+    opacity:0; pointer-events:none; transition: opacity .3s var(--ease);
+  }
+  .modal-overlay.show{ opacity:1; pointer-events:auto; }
+  .modal{
+    background:var(--bg); width:100%; max-width:480px; border-radius: 28px 28px 0 0;
+    padding:24px 22px 28px; box-shadow: 0 -8px 30px rgba(0,0,0,.25);
+    transform: translateY(30px); transition: transform .35s var(--ease);
+    max-height:88vh; overflow-y:auto;
+  }
+  .modal-overlay.show .modal{ transform: translateY(0); }
+  .modal-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; }
+  .modal-head h3{ margin:0; font-size:16px; }
+  .modal-actions{ display:flex; gap:10px; margin-top:6px; }
+
+  @media (min-width:600px){
+    .modal-overlay{ align-items:center; }
+    .modal{ border-radius: var(--radius-lg); }
+  }
+  @media (min-width:700px){
+    .app{ padding: 32px 24px 60px; }
+    .day-stat-row{ gap:16px; }
+  }
+  @media (min-width:860px){
+    .cal-cell{ font-size:13.5px; }
+    .ratio-wrap{ flex-wrap:nowrap; }
+  }
+</style>
+</head>
+<body data-theme="light">
+<div class="app">
+
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-mark">₵💰</div>
+      <div>
+        <h1>Cedi Tracker 💰</h1>
+        <p>Income &amp; spending, in GHS 💵</p>
+      </div>
+    </div>
+    <button class="icon-btn" id="themeToggle" title="Toggle theme">🌙</button>
+  </div>
+
+  <nav class="menu">
+    <button class="nav-btn active" data-view="add">➕ Add</button>
+    <button class="nav-btn" data-view="calendar">📅 Calendar</button>
+    <button class="nav-btn" data-view="metrics">📊 Metrics</button>
+  </nav>
+
+  <main id="views">
+
+    <!-- ADD VIEW -->
+    <section id="view-add" class="view active enter">
+      <div class="neu-card">
+        <h2 class="section-title">📝 New entry</h2>
+        <p class="sub">💡 Log income whenever it lands, or an expense as soon as you spend.</p>
+
+        <div class="type-toggle">
+          <button type="button" data-t="income" class="active">💰 Income</button>
+          <button type="button" data-t="expense">💸 Expense</button>
+        </div>
+
+        <div class="field">
+          <label for="add-date">📅 Date</label>
+          <input type="date" id="add-date">
+        </div>
+
+        <div class="field">
+          <label for="add-desc">📝 Description</label>
+          <input type="text" id="add-desc" placeholder="e.g. Trotro fare, Freelance payment">
+        </div>
+
+        <div class="field">
+          <label for="add-amount">💵 Amount (GHS)</label>
+          <input type="number" id="add-amount" placeholder="0.00" min="0" step="0.01">
+        </div>
+
+        <div class="field" id="add-expense-type-wrap" style="display:none;">
+          <label>🤔 How do you feel about this spend?</label>
+          <div class="chip-row" id="add-chip-row">
+            <button type="button" class="chip" data-v="satisfied">😊 Satisfied</button>
+            <button type="button" class="chip" data-v="needed">🛒 Needed</button>
+            <button type="button" class="chip" data-v="regretted">😞 Regretted</button>
+            <button type="button" class="chip" data-v="emergency">🚨 Emergency</button>
+          </div>
+        </div>
+
+        <button class="btn-primary" id="add-submit">💾 Save entry</button>
+      </div>
+    </section>
+
+    <!-- CALENDAR VIEW -->
+    <section id="view-calendar" class="view">
+      <div class="neu-card">
+        <div class="cal-head">
+          <button class="icon-btn" id="cal-prev">‹</button>
+          <div class="month-label" id="cal-month-label">Month</div>
+          <button class="icon-btn" id="cal-next">›</button>
+        </div>
+        <div class="cal-grid" id="cal-dow-row"></div>
+        <div class="cal-grid" id="cal-grid" style="margin-top:6px;"></div>
+      </div>
+
+      <div class="neu-card day-panel" id="day-panel" style="display:none;">
+        <div class="day-panel-head">
+          <h2 class="section-title" id="day-title" style="margin:0;">Day</h2>
+          <button class="btn-ghost" id="day-add-btn">➕ Add for this day</button>
+        </div>
+        <div class="day-stat-row">
+          <div class="neu-flat day-stat">
+            <div class="amt" id="day-earned" style="color:var(--income);">₵0</div>
+            <div class="lbl">💵 Earned</div>
+          </div>
+          <div class="neu-flat day-stat">
+            <div class="amt" id="day-spent" style="color:var(--expense);">₵0</div>
+            <div class="lbl">💸 Spent</div>
+          </div>
+          <div class="neu-flat day-stat">
+            <div class="amt" id="day-net">₵0</div>
+            <div class="lbl">💰 Net</div>
+          </div>
+        </div>
+        <div id="day-entries"></div>
+      </div>
+    </section>
+
+    <!-- METRICS VIEW -->
+    <section id="view-metrics" class="view">
+      <div class="period-scroll" id="period-scroll">
+        <button class="period-btn active" data-p="today">📆 Today</button>
+        <button class="period-btn" data-p="week1">1️⃣ Week 1</button>
+        <button class="period-btn" data-p="week2">2️⃣ Week 2</button>
+        <button class="period-btn" data-p="week3">3️⃣ Week 3</button>
+        <button class="period-btn" data-p="week4">4️⃣ Week 4</button>
+        <button class="period-btn" data-p="month">🗓️ Month</button>
+      </div>
+
+      <div class="neu-card">
+        <h2 class="section-title" id="metrics-period-label">Today</h2>
+        <div class="ratio-wrap">
+          <div class="donut" style="--pct:0;"><div class="donut-inner" id="donut-pct">0%<span>spent of income</span></div></div>
+          <div class="ratio-legend">
+            <div class="legend-row">
+              <div class="legend-left"><span class="legend-dot" style="background:var(--income)"></span>💵 Earned</div>
+              <div class="legend-val" id="m-income">₵0</div>
+            </div>
+            <div class="legend-row">
+              <div class="legend-left"><span class="legend-dot" style="background:var(--expense)"></span>💸 Spent</div>
+              <div class="legend-val" id="m-expense">₵0</div>
+            </div>
+            <div class="legend-row">
+              <div class="legend-left"><span class="legend-dot" style="background:var(--accent)"></span>💰 Net saved</div>
+              <div class="legend-val" id="m-net">₵0</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="neu-card">
+        <h2 class="section-title">Spend breakdown</h2>
+        <div class="breakdown-bars" id="breakdown-bars"></div>
+      </div>
+
+      <div class="neu-card">
+        <h2 class="section-title">✂️ Consider cutting back</h2>
+        <p class="sub">😞 Based on expenses you tagged as regretted.</p>
+        <div id="suggestions-list"></div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<div class="toast" id="toast">✅ Saved</div>
+
+<!-- Edit/Add-for-day modal -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="modal-title">✏️ Edit entry</h3>
+      <button class="icon-btn" id="modal-close">✕</button>
+    </div>
+
+    <div class="type-toggle">
+      <button type="button" data-t="income" id="modal-t-income">💰 Income</button>
+      <button type="button" data-t="expense" id="modal-t-expense">💸 Expense</button>
+    </div>
+
+    <div class="field">
+      <label for="modal-date">📅 Date</label>
+      <input type="date" id="modal-date">
+    </div>
+    <div class="field">
+      <label for="modal-desc">📝 Description</label>
+      <input type="text" id="modal-desc">
+    </div>
+    <div class="field">
+      <label for="modal-amount">💵 Amount (GHS)</label>
+      <input type="number" id="modal-amount" min="0" step="0.01">
+    </div>
+    <div class="field" id="modal-expense-type-wrap" style="display:none;">
+      <label>🤔 How do you feel about this spend?</label>
+      <div class="chip-row" id="modal-chip-row">
+        <button type="button" class="chip" data-v="satisfied">😊 Satisfied</button>
+        <button type="button" class="chip" data-v="needed">🛒 Needed</button>
+        <button type="button" class="chip" data-v="regretted">😞 Regretted</button>
+        <button type="button" class="chip" data-v="emergency">🚨 Emergency</button>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-ghost btn-danger" id="modal-delete" style="display:none;">🗑️ Delete</button>
+      <button class="btn-primary" id="modal-save">💾 Save changes</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------------- State ---------------- */
+  let entries = [];
+  let theme = "light";
+  let calMonth = new Date(); calMonth.setDate(1);
+  let selectedDay = null;
+  let addType = "income";
+  let addExpenseType = null;
+  let modalType = "income";
+  let modalExpenseType = null;
+  let editingId = null;
+  let metricsPeriod = "today";
+
+  const $ = (sel, root) => (root||document).querySelector(sel);
+  const $all = (sel, root) => Array.from((root||document).querySelectorAll(sel));
+
+  function pad(n){ return n < 10 ? "0"+n : ""+n; }
+  function ymd(d){ return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate()); }
+  function todayStr(){ return ymd(new Date()); }
+  function fmt(n){ return "₵" + (Math.round(n*100)/100).toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2}); }
+  function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,8); }
+
+  /* ---------------- Storage ---------------- */
+  async function loadAll(){
+    try{
+      const res = await window.storage.get("entries", false);
+      entries = res && res.value ? JSON.parse(res.value) : [];
+    }catch(e){ entries = []; }
+    try{
+      const res2 = await window.storage.get("theme", false);
+      theme = res2 && res2.value ? res2.value : "light";
+    }catch(e){ theme = "light"; }
+    applyTheme();
+  }
+  async function saveEntries(){
+    try{ await window.storage.set("entries", JSON.stringify(entries), false); }
+    catch(e){ console.error("save failed", e); showToast("⚠️ Could not save — try again"); }
+  }
+  async function saveTheme(){
+    try{ await window.storage.set("theme", theme, false); }catch(e){}
+  }
+
+  function applyTheme(){
+    document.body.setAttribute("data-theme", theme);
+    $("#themeToggle").textContent = theme === "light" ? "🌙" : "☀️";
+  }
+
+  /* ---------------- Toast ---------------- */
+  let toastTimer;
+  function showToast(msg){
+    const t = $("#toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(()=> t.classList.remove("show"), 1800);
+  }
+
+  /* ---------------- Nav / view transitions ---------------- */
+  function switchView(name){
+    const current = $(".view.active");
+    const next = $("#view-"+name);
+    if(current === next) return;
+    $all(".nav-btn").forEach(b=> b.classList.toggle("active", b.dataset.view===name));
+
+    if(current){
+      current.classList.remove("enter");
+      current.classList.add("leave");
+      setTimeout(()=>{
+        current.classList.remove("active","leave");
+        next.classList.add("active");
+        void next.offsetWidth;
+        next.classList.add("enter");
+      }, 180);
+    } else {
+      next.classList.add("active","enter");
+    }
+
+    if(name === "calendar") renderCalendar();
+    if(name === "metrics") renderMetrics();
+  }
+  $all(".nav-btn").forEach(btn=>{
+    btn.addEventListener("click", ()=> switchView(btn.dataset.view));
+  });
+
+  $("#themeToggle").addEventListener("click", ()=>{
+    theme = theme === "light" ? "dark" : "light";
+    applyTheme();
+    saveTheme();
+  });
+
+  /* ================= ADD VIEW ================= */
+  $("#add-date").value = todayStr();
+
+  $all("#view-add .type-toggle button").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      addType = btn.dataset.t;
+      $all("#view-add .type-toggle button").forEach(b=> b.classList.toggle("active", b===btn));
+      $("#add-expense-type-wrap").style.display = addType === "expense" ? "block" : "none";
+    });
+  });
+  $all("#add-chip-row .chip").forEach(chip=>{
+    chip.addEventListener("click", ()=>{
+      addExpenseType = chip.dataset.v;
+      $all("#add-chip-row .chip").forEach(c=> c.classList.toggle("active", c===chip));
+    });
+  });
+
+  $("#add-submit").addEventListener("click", async ()=>{
+    const date = $("#add-date").value || todayStr();
+    const desc = $("#add-desc").value.trim();
+    const amount = parseFloat($("#add-amount").value);
+
+    if(!amount || amount <= 0){ showToast("❗ Enter a valid amount"); return; }
+    if(!desc){ showToast("📝 Add a short description"); return; }
+    if(addType === "expense" && !addExpenseType){ showToast("🤔 Pick how you feel about this spend"); return; }
+
+    entries.push({
+      id: uid(), date, type: addType, desc, amount,
+      expenseType: addType === "expense" ? addExpenseType : null
+    });
+    await saveEntries();
+    showToast(addType === "income" ? "💰 Income saved" : "💸 Expense saved");
+
+    $("#add-desc").value = ""; $("#add-amount").value = "";
+    addExpenseType = null;
+    $all("#add-chip-row .chip").forEach(c=> c.classList.remove("active"));
+
+    if(selectedDay === date) renderDayPanel();
+  });
+
+  /* ================= CALENDAR VIEW ================= */
+  const DOW = ["Su","Mo","Tu","We","Th","Fr","Sa"];
+  const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+
+  $("#cal-dow-row").innerHTML = DOW.map(d=>`<div class="cal-dow">${d}</div>`).join("");
+
+  function renderCalendar(){
+    $("#cal-month-label").textContent = "🗓️ " + MONTHS[calMonth.getMonth()] + " " + calMonth.getFullYear();
+    const year = calMonth.getFullYear(), month = calMonth.getMonth();
+    const firstDow = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month+1, 0).getDate();
+    const grid = $("#cal-grid");
+    let html = "";
+    for(let i=0;i<firstDow;i++) html += `<div class="cal-cell empty"></div>`;
+    for(let d=1; d<=daysInMonth; d++){
+      const dateStr = year+"-"+pad(month+1)+"-"+pad(d);
+      const dayEntries = entries.filter(e=> e.date === dateStr);
+      const hasIncome = dayEntries.some(e=> e.type==="income");
+      const hasExpense = dayEntries.some(e=> e.type==="expense");
+      const isToday = dateStr === todayStr();
+      const isSel = dateStr === selectedDay;
+      html += `<div class="cal-cell ${isToday?"today":""} ${isSel?"selected":""}" data-date="${dateStr}">
+        <span>${d}</span>
+        <span class="cal-dots">${hasIncome?'<span class="dot income"></span>':''}${hasExpense?'<span class="dot expense"></span>':''}</span>
+      </div>`;
+    }
+    grid.innerHTML = html;
+    $all(".cal-cell:not(.empty)").forEach(cell=>{
+      cell.addEventListener("click", ()=>{
+        selectedDay = cell.dataset.date;
+        renderCalendar();
+        renderDayPanel();
+      });
+    });
+  }
+
+  $("#cal-prev").addEventListener("click", ()=>{ calMonth.setMonth(calMonth.getMonth()-1); renderCalendar(); });
+  $("#cal-next").addEventListener("click", ()=>{ calMonth.setMonth(calMonth.getMonth()+1); renderCalendar(); });
+
+  function renderDayPanel(){
+    const panel = $("#day-panel");
+    if(!selectedDay){ panel.style.display = "none"; return; }
+    panel.style.display = "block";
+    panel.style.opacity = 0;
+    requestAnimationFrame(()=>{ panel.style.transition = "opacity .3s var(--ease)"; panel.style.opacity = 1; });
+
+    const d = new Date(selectedDay+"T00:00:00");
+    $("#day-title").textContent = "📌 " + d.toLocaleDateString(undefined,{weekday:"long", month:"long", day:"numeric"});
+
+    const dayEntries = entries.filter(e=> e.date === selectedDay);
+    const earned = dayEntries.filter(e=>e.type==="income").reduce((s,e)=>s+e.amount,0);
+    const spent = dayEntries.filter(e=>e.type==="expense").reduce((s,e)=>s+e.amount,0);
+    $("#day-earned").textContent = fmt(earned);
+    $("#day-spent").textContent = fmt(spent);
+    const net = earned - spent;
+    const netEl = $("#day-net");
+    netEl.textContent = (net<0?"-":"") + fmt(Math.abs(net));
+    netEl.style.color = net >= 0 ? "var(--income)" : "var(--expense)";
+
+    const list = $("#day-entries");
+    if(dayEntries.length === 0){
+      list.innerHTML = `<div class="empty-note">Nothing logged this day yet.</div>`;
+    } else {
+      list.innerHTML = dayEntries.map(e=>{
+        const color = e.type === "income" ? "var(--income)" : "var(--expense)";
+        const tag = e.type === "income" ? "💰 income" : e.expenseType ? 
+          (e.expenseType === "satisfied" ? "😊 satisfied" : 
+           e.expenseType === "needed" ? "🛒 needed" : 
+           e.expenseType === "regretted" ? "😞 regretted" : "🚨 emergency") : "";
+        return `<div class="entry-row" data-id="${e.id}">
+          <div class="entry-left">
+            <span class="entry-dot" style="background:${color}"></span>
+            <div style="min-width:0;">
+              <div class="entry-desc">${escapeHtml(e.desc)}</div>
+              <div class="entry-tag">${tag}</div>
+            </div>
+          </div>
+          <div class="entry-amt" style="color:${color}">${e.type==="income"?"+":"-"}${fmt(e.amount)}</div>
+        </div>`;
+      }).join("");
+      $all(".entry-row", list).forEach(row=>{
+        row.addEventListener("click", ()=> openModal(row.dataset.id));
+      });
+    }
+  }
+
+  $("#day-add-btn").addEventListener("click", ()=>{
+    if(!selectedDay) selectedDay = todayStr();
+    openModal(null, selectedDay);
+  });
+
+  function escapeHtml(s){
+    return s.replace(/[&<>"']/g, c=> ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  }
+
+  /* ================= MODAL (edit / add-for-day) ================= */
+  function setModalType(t){
+    modalType = t;
+    $("#modal-t-income").classList.toggle("active", t==="income");
+    $("#modal-t-expense").classList.toggle("active", t==="expense");
+    $("#modal-expense-type-wrap").style.display = t==="expense" ? "block" : "none";
+  }
+  $("#modal-t-income").addEventListener("click", ()=> setModalType("income"));
+  $("#modal-t-expense").addEventListener("click", ()=> setModalType("expense"));
+  $all("#modal-chip-row .chip").forEach(chip=>{
+    chip.addEventListener("click", ()=>{
+      modalExpenseType = chip.dataset.v;
+      $all("#modal-chip-row .chip").forEach(c=> c.classList.toggle("active", c===chip));
+    });
+  });
+
+  function openModal(id, presetDate){
+    editingId = id;
+    const overlay = $("#modal-overlay");
+    modalExpenseType = null;
+    $all("#modal-chip-row .chip").forEach(c=> c.classList.remove("active"));
+
+    if(id){
+      const e = entries.find(x=> x.id === id);
+      $("#modal-title").textContent = "✏️ Edit entry";
+      $("#modal-delete").style.display = "inline-block";
+      $("#modal-date").value = e.date;
+      $("#modal-desc").value = e.desc;
+      $("#modal-amount").value = e.amount;
+      setModalType(e.type);
+      if(e.type === "expense"){
+        modalExpenseType = e.expenseType;
+        $all("#modal-chip-row .chip").forEach(c=> c.classList.toggle("active", c.dataset.v===e.expenseType));
+      }
+    } else {
+      $("#modal-title").textContent = "➕ Add entry";
+      $("#modal-delete").style.display = "none";
+      $("#modal-date").value = presetDate || todayStr();
+      $("#modal-desc").value = "";
+      $("#modal-amount").value = "";
+      setModalType("income");
+    }
+    overlay.classList.add("show");
+  }
+  function closeModal(){ $("#modal-overlay").classList.remove("show"); editingId = null; }
+  $("#modal-close").addEventListener("click", closeModal);
+  $("#modal-overlay").addEventListener("click", (e)=>{ if(e.target.id==="modal-overlay") closeModal(); });
+
+  $("#modal-save").addEventListener("click", async ()=>{
+    const date = $("#modal-date").value || todayStr();
+    const desc = $("#modal-desc").value.trim();
+    const amount = parseFloat($("#modal-amount").value);
+
+    if(!amount || amount <= 0){ showToast("❗ Enter a valid amount"); return; }
+    if(!desc){ showToast("📝 Add a short description"); return; }
+    if(modalType === "expense" && !modalExpenseType){ showToast("🤔 Pick how you feel about this spend"); return; }
+
+    if(editingId){
+      const e = entries.find(x=> x.id === editingId);
+      e.date = date; e.desc = desc; e.amount = amount; e.type = modalType;
+      e.expenseType = modalType === "expense" ? modalExpenseType : null;
+    } else {
+      entries.push({ id: uid(), date, desc, amount, type: modalType, expenseType: modalType==="expense"?modalExpenseType:null });
+    }
+    await saveEntries();
+    showToast("✅ Changes saved");
+    closeModal();
+    selectedDay = date;
+    renderCalendar();
+    renderDayPanel();
+  });
+
+  $("#modal-delete").addEventListener("click", async ()=>{
+    if(!editingId) return;
+    entries = entries.filter(e=> e.id !== editingId);
+    await saveEntries();
+    showToast("🗑️ Entry deleted");
+    closeModal();
+    renderCalendar();
+    renderDayPanel();
+  });
+
+  /* ================= METRICS VIEW ================= */
+  $all(".period-btn").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      metricsPeriod = btn.dataset.p;
+      $all(".period-btn").forEach(b=> b.classList.toggle("active", b===btn));
+      renderMetrics();
+    });
+  });
+
+  function periodRange(period){
+    const now = new Date();
+    const year = now.getFullYear(), month = now.getMonth();
+    const daysInMonth = new Date(year, month+1, 0).getDate();
+    let start, end, label;
+    if(period === "today"){
+      start = end = now.getDate(); label = "Today";
+    } else if(period === "week1"){ start=1; end=7; label="Week 1 (1–7)"; }
+    else if(period === "week2"){ start=8; end=14; label="Week 2 (8–14)"; }
+    else if(period === "week3"){ start=15; end=21; label="Week 3 (15–21)"; }
+    else if(period === "week4"){ start=22; end=daysInMonth; label="Week 4 (22–"+daysInMonth+")"; }
+    else { start=1; end=daysInMonth; label = MONTHS[month]+" "+year; }
+    const from = year+"-"+pad(month+1)+"-"+pad(start);
+    const to = year+"-"+pad(month+1)+"-"+pad(end);
+    return { from, to, label };
+  }
+
+  function renderMetrics(){
+    const { from, to, label } = periodRange(metricsPeriod);
+    $("#metrics-period-label").textContent = "📊 " + label;
+
+    const inRange = entries.filter(e=> e.date >= from && e.date <= to);
+    const income = inRange.filter(e=>e.type==="income").reduce((s,e)=>s+e.amount,0);
+    const expense = inRange.filter(e=>e.type==="expense").reduce((s,e)=>s+e.amount,0);
+    const net = income - expense;
+
+    $("#m-income").textContent = fmt(income);
+    $("#m-expense").textContent = fmt(expense);
+    $("#m-net").textContent = (net<0?"-":"") + fmt(Math.abs(net));
+    $("#m-net").style.color = net>=0 ? "var(--income)" : "var(--expense)";
+
+    const pct = income > 0 ? Math.min(100, Math.round((expense/income)*100)) : (expense>0 ? 100 : 0);
+    $(".donut").style.setProperty("--pct", pct);
+    $("#donut-pct").innerHTML = pct + "%<span>spent of income</span>";
+
+    const types = ["satisfied","needed","regretted","emergency"];
+    const typeLabels = {satisfied:"😊 Satisfied", needed:"🛒 Needed", regretted:"😞 Regretted", emergency:"🚨 Emergency"};
+    const typeExpenses = inRange.filter(e=>e.type==="expense");
+    const bars = types.map(t=>{
+      const amt = typeExpenses.filter(e=>e.expenseType===t).reduce((s,e)=>s+e.amount,0);
+      const pctOfExpense = expense>0 ? Math.round((amt/expense)*100) : 0;
+      return `<div class="bar-row">
+        <div class="bar-row-top"><span>${typeLabels[t]}</span><span>${fmt(amt)}</span></div>
+        <div class="bar-track"><div class="bar-fill" style="width:${pctOfExpense}%; background:var(--${t});"></div></div>
+      </div>`;
+    }).join("");
+    $("#breakdown-bars").innerHTML = expense === 0
+      ? `<div class="empty-note">No expenses logged for this period yet.</div>`
+      : bars;
+
+    // Suggestions: regretted expenses grouped by description (this period)
+    const regretted = typeExpenses.filter(e=> e.expenseType === "regretted");
+    const groups = {};
+    regretted.forEach(e=>{
+      const key = e.desc.trim().toLowerCase();
+      if(!groups[key]) groups[key] = { desc: e.desc.trim(), total:0, count:0 };
+      groups[key].total += e.amount;
+      groups[key].count += 1;
+    });
+    const sorted = Object.values(groups).sort((a,b)=> b.total - a.total).slice(0,6);
+    const suggList = $("#suggestions-list");
+    if(sorted.length === 0){
+      suggList.innerHTML = `<div class="empty-note">🎉 No regretted spends this period — nice work.</div>`;
+    } else {
+      suggList.innerHTML = sorted.map(g=>`
+        <div class="suggest-row">
+          <div class="suggest-left">
+            <div class="t">${escapeHtml(g.desc)}</div>
+            <div class="s">${fmt(g.total)} across ${g.count} time${g.count>1?"s":""}</div>
+          </div>
+          <div class="suggest-badge">✂️ Cut this?</div>
+        </div>`).join("");
+    }
+  }
+
+  /* ---------------- Init ---------------- */
+  loadAll();
+})();
+</script>
+</body>
+</html>
