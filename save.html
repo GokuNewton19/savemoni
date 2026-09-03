@@ -353,10 +353,134 @@
     .cal-cell{ font-size:13.5px; }
     .ratio-wrap{ flex-wrap:nowrap; }
   }
+
+  /* ---------- Footer ---------- */
+  .app-footer{
+    position:fixed; left:0; right:0; bottom:0;
+    text-align:center; padding:10px 8px 12px;
+    font-size:11px; font-weight:700; letter-spacing:.3px;
+    color:var(--text-soft);
+    background:linear-gradient(to top, var(--bg) 60%, transparent);
+    z-index:200; pointer-events:none;
+  }
+
+  /* ---------- Splash screen ---------- */
+  .splash{
+    position:fixed; inset:0; z-index:150;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    background:var(--bg); padding:24px; text-align:center;
+  }
+  .splash-grid{
+    display:grid; grid-template-columns: repeat(6, 1fr);
+    grid-template-rows: repeat(4, 1fr);
+    gap:6px; width:216px; height:144px; margin-bottom:26px;
+  }
+  .splash-sq{
+    width:100%; height:100%; border-radius:10px;
+    background:var(--accent);
+    box-shadow: 4px 4px 10px var(--shadow-d), -4px -4px 10px var(--shadow-l);
+    opacity:0;
+    transform: translate(var(--sx), var(--sy)) rotate(var(--sr)) scale(.4);
+    transition: transform .85s var(--ease), opacity .5s ease;
+    transition-delay: var(--sd);
+  }
+  .splash-sq.settled{
+    opacity:1;
+    transform: translate(0,0) rotate(0deg) scale(1);
+  }
+  .splash-sq:nth-child(3n+1){ background:var(--accent); }
+  .splash-sq:nth-child(3n+2){ background:var(--income); }
+  .splash-sq:nth-child(3n+3){ background:var(--needed); }
+  .splash-text{
+    font-size:16px; font-weight:700; color:var(--text);
+    max-width:280px; line-height:1.4;
+    opacity:0; transform:translateY(10px);
+    transition: opacity .5s var(--ease), transform .5s var(--ease);
+  }
+  .splash-text.show{ opacity:1; transform:translateY(0); }
+  .splash-actions{
+    display:flex; gap:12px; margin-top:22px; width:100%; max-width:280px;
+    opacity:0; transform:translateY(10px);
+    transition: opacity .5s var(--ease), transform .5s var(--ease);
+  }
+  .splash-actions.show{ opacity:1; transform:translateY(0); }
+  .splash-actions button{ flex:1; }
+
+  /* ---------- Auth screen ---------- */
+  .auth-screen{
+    position:fixed; inset:0; z-index:150; display:none;
+    align-items:center; justify-content:center; background:var(--bg); padding:24px;
+  }
+  .auth-screen.active{ display:flex; }
+  .auth-card{ width:100%; max-width:360px; }
+  .auth-tabs{ display:flex; gap:10px; margin-bottom:20px; }
+  .auth-tab{
+    flex:1; padding:12px 8px; border:none; border-radius: var(--radius-sm);
+    background:var(--bg); color:var(--text-soft); font-weight:700; font-size:13.5px;
+    box-shadow: 5px 5px 10px var(--shadow-d), -5px -5px 10px var(--shadow-l);
+    cursor:pointer; transition: all .2s var(--ease);
+  }
+  .auth-tab.active{ color:var(--accent); box-shadow: inset 4px 4px 9px var(--shadow-d), inset -4px -4px 9px var(--shadow-l); }
+  .auth-error{
+    font-size:12.5px; font-weight:700; color:var(--emergency);
+    min-height:16px; margin:-6px 0 12px;
+  }
+  .auth-switch{ text-align:center; font-size:12.5px; color:var(--text-soft); margin-top:16px; }
+  .auth-switch a{ color:var(--accent); font-weight:700; cursor:pointer; text-decoration:none; }
+  .auth-brand{ text-align:center; margin-bottom:22px; }
+  .auth-brand .mark{ font-size:34px; }
+  .auth-brand h1{ font-size:19px; margin:8px 0 2px; }
+  .auth-brand p{ margin:0; font-size:12px; color:var(--text-soft); }
 </style>
 </head>
 <body data-theme="light">
-<div class="app">
+
+<!-- SPLASH SCREEN -->
+<div class="splash" id="splash-screen">
+  <div class="splash-grid" id="splash-grid"></div>
+  <div class="splash-text" id="splash-text">You for check your spending 💰</div>
+  <div class="splash-actions" id="splash-actions">
+    <button class="btn-primary" id="splash-login-btn" style="width:auto;">🔑 Login</button>
+    <button class="btn-ghost" id="splash-signup-btn" style="width:auto;">✨ Sign Up</button>
+  </div>
+</div>
+
+<!-- AUTH SCREEN -->
+<div class="auth-screen" id="auth-screen">
+  <div class="auth-card neu-card">
+    <div class="auth-brand">
+      <div class="mark">₵💰</div>
+      <h1>Cedi Tracker</h1>
+      <p>Income &amp; spending, in GHS 💵</p>
+    </div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="auth-tab-login" type="button">🔑 Login</button>
+      <button class="auth-tab" id="auth-tab-signup" type="button">✨ Sign Up</button>
+    </div>
+
+    <div class="field">
+      <label for="auth-mobile">📱 Mobile number</label>
+      <input type="text" id="auth-mobile" placeholder="e.g. 0551234567" inputmode="tel">
+    </div>
+    <div class="field">
+      <label for="auth-password">🔒 Password</label>
+      <input type="text" id="auth-password" placeholder="Enter password">
+    </div>
+    <div class="field" id="auth-confirm-wrap" style="display:none;">
+      <label for="auth-confirm">🔒 Confirm password</label>
+      <input type="text" id="auth-confirm" placeholder="Re-enter password">
+    </div>
+
+    <div class="auth-error" id="auth-error"></div>
+
+    <button class="btn-primary" id="auth-submit">🔑 Login</button>
+    <div class="auth-switch" id="auth-switch">
+      New here? <a id="auth-switch-link">Create an account</a>
+    </div>
+  </div>
+</div>
+
+<div class="app" id="main-app" style="display:none;">
 
   <div class="topbar">
     <div class="brand">
@@ -550,6 +674,7 @@
   /* ---------------- State ---------------- */
   let entries = [];
   let theme = "light";
+  let currentUser = null; // in-memory only — resets on refresh/close, so login is required again
   let calMonth = new Date(); calMonth.setDate(1);
   let selectedDay = null;
   let addType = "income";
@@ -571,27 +696,38 @@
   /* ---------------- Storage ----------------
      Uses localStorage so data persists in THIS browser on THIS device,
      across page reloads and closing/reopening the tab — as long as you
-     always open this same saved .html file and don't clear browser data. */
-  const STORAGE_KEY = "cedi-tracker-entries";
-  const THEME_KEY = "cedi-tracker-theme";
+     always open this same saved .html file and don't clear browser data.
+     Entries/theme are scoped per logged-in user (by mobile number), so
+     different accounts on the same device don't see each other's data. */
+  const ACCOUNTS_KEY = "cedi-tracker-accounts";
+  function entriesKey(){ return "cedi-tracker-entries-" + currentUser; }
+  function themeKey(){ return "cedi-tracker-theme-" + currentUser; }
+
+  function getAccounts(){
+    try{ return JSON.parse(localStorage.getItem(ACCOUNTS_KEY)) || []; }
+    catch(e){ return []; }
+  }
+  function saveAccounts(list){
+    try{ localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(list)); }catch(e){}
+  }
 
   async function loadAll(){
     try{
-      const raw = localStorage.getItem(STORAGE_KEY);
+      const raw = localStorage.getItem(entriesKey());
       entries = raw ? JSON.parse(raw) : [];
     }catch(e){ entries = []; }
     try{
-      const t = localStorage.getItem(THEME_KEY);
+      const t = localStorage.getItem(themeKey());
       theme = t || "light";
     }catch(e){ theme = "light"; }
     applyTheme();
   }
   async function saveEntries(){
-    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(entries)); }
+    try{ localStorage.setItem(entriesKey(), JSON.stringify(entries)); }
     catch(e){ console.error("save failed", e); showToast("⚠️ Could not save — try again"); }
   }
   async function saveTheme(){
-    try{ localStorage.setItem(THEME_KEY, theme); }catch(e){}
+    try{ localStorage.setItem(themeKey(), theme); }catch(e){}
   }
 
   function applyTheme(){
@@ -943,9 +1079,120 @@
     }
   }
 
+  /* ================= SPLASH SCREEN ================= */
+  const SPLASH_COLS = 6, SPLASH_ROWS = 4, SPLASH_TOTAL = SPLASH_COLS * SPLASH_ROWS;
+  function buildSplash(){
+    const grid = $("#splash-grid");
+    let html = "";
+    for(let i=0;i<SPLASH_TOTAL;i++){
+      const sx = (Math.random()*260 - 130).toFixed(0) + "px";
+      const sy = (Math.random()*260 - 130).toFixed(0) + "px";
+      const sr = (Math.random()*360 - 180).toFixed(0) + "deg";
+      const sd = (Math.random()*0.5).toFixed(2) + "s";
+      html += `<div class="splash-sq" style="--sx:${sx}; --sy:${sy}; --sr:${sr}; --sd:${sd};"></div>`;
+    }
+    grid.innerHTML = html;
+    requestAnimationFrame(()=>{
+      requestAnimationFrame(()=>{
+        $all(".splash-sq", grid).forEach(sq=> sq.classList.add("settled"));
+      });
+    });
+    setTimeout(()=>{
+      $("#splash-text").classList.add("show");
+      $("#splash-actions").classList.add("show");
+    }, 1500);
+  }
+
+  $("#splash-login-btn").addEventListener("click", ()=> openAuth("login"));
+  $("#splash-signup-btn").addEventListener("click", ()=> openAuth("signup"));
+
+  /* ================= AUTH ================= */
+  let authMode = "login";
+  function openAuth(mode){
+    $("#splash-screen").style.display = "none";
+    $("#auth-screen").classList.add("active");
+    setAuthMode(mode);
+  }
+  function setAuthMode(mode){
+    authMode = mode;
+    $("#auth-tab-login").classList.toggle("active", mode==="login");
+    $("#auth-tab-signup").classList.toggle("active", mode==="signup");
+    $("#auth-confirm-wrap").style.display = mode==="signup" ? "block" : "none";
+    $("#auth-submit").textContent = mode==="signup" ? "✨ Create account" : "🔑 Login";
+    $("#auth-switch").innerHTML = mode==="signup"
+      ? `Already have an account? <a id="auth-switch-link">Log in</a>`
+      : `New here? <a id="auth-switch-link">Create an account</a>`;
+    $("#auth-error").textContent = "";
+    $("#auth-mobile").value = "";
+    $("#auth-password").value = "";
+    $("#auth-confirm").value = "";
+    $("#auth-switch-link").addEventListener("click", ()=> setAuthMode(mode==="signup" ? "login" : "signup"));
+  }
+  $("#auth-tab-login").addEventListener("click", ()=> setAuthMode("login"));
+  $("#auth-tab-signup").addEventListener("click", ()=> setAuthMode("signup"));
+
+  function normalizeMobile(v){ return v.replace(/\s+/g,""); }
+
+  async function loginAs(mobile){
+    currentUser = mobile;
+    $("#auth-screen").classList.remove("active");
+    $("#splash-screen").style.display = "none";
+    $("#main-app").style.display = "block";
+    await loadAll();
+  }
+
+  $("#auth-submit").addEventListener("click", async ()=>{
+    const mobile = normalizeMobile($("#auth-mobile").value);
+    const password = $("#auth-password").value;
+    const errEl = $("#auth-error");
+    errEl.textContent = "";
+
+    if(!/^[0-9+]{9,15}$/.test(mobile)){ errEl.textContent = "❗ Enter a valid mobile number"; return; }
+    if(!password || password.length < 4){ errEl.textContent = "❗ Password must be at least 4 characters"; return; }
+
+    const accounts = getAccounts();
+
+    if(authMode === "signup"){
+      const confirm = $("#auth-confirm").value;
+      if(password !== confirm){ errEl.textContent = "❗ Passwords don't match"; return; }
+      if(accounts.some(a=> a.mobile === mobile)){ errEl.textContent = "❗ An account with this number already exists"; return; }
+      accounts.push({ mobile, password });
+      saveAccounts(accounts);
+      showToast("✅ Account created");
+      await loginAs(mobile);
+    } else {
+      const acc = accounts.find(a=> a.mobile === mobile && a.password === password);
+      if(!acc){ errEl.textContent = "❗ Incorrect mobile number or password"; return; }
+      showToast("👋 Welcome back");
+      await loginAs(mobile);
+    }
+  });
+
+  function logout(){
+    currentUser = null;
+    $("#main-app").style.display = "none";
+    $("#auth-screen").classList.remove("active");
+    $("#splash-screen").style.display = "flex";
+    $("#splash-text").classList.remove("show");
+    $("#splash-actions").classList.remove("show");
+    buildSplash();
+  }
+
+  const logoutBtn = document.createElement("button");
+  logoutBtn.className = "icon-btn";
+  logoutBtn.title = "Log out";
+  logoutBtn.textContent = "🚪";
+  logoutBtn.style.marginLeft = "8px";
+  logoutBtn.addEventListener("click", ()=>{
+    if(confirm("Log out?")) logout();
+  });
+  $("#themeToggle").insertAdjacentElement("afterend", logoutBtn);
+
   /* ---------------- Init ---------------- */
-  loadAll();
+  buildSplash(); // no auto-login on load/refresh — user must log in every time
 })();
 </script>
+<div class="app-footer">Built By Angelsson Tech</div>
+
 </body>
 </html>
