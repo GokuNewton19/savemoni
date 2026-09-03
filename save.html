@@ -568,24 +568,30 @@
   function fmt(n){ return "₵" + (Math.round(n*100)/100).toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2}); }
   function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,8); }
 
-  /* ---------------- Storage ---------------- */
+  /* ---------------- Storage ----------------
+     Uses localStorage so data persists in THIS browser on THIS device,
+     across page reloads and closing/reopening the tab — as long as you
+     always open this same saved .html file and don't clear browser data. */
+  const STORAGE_KEY = "cedi-tracker-entries";
+  const THEME_KEY = "cedi-tracker-theme";
+
   async function loadAll(){
     try{
-      const res = await window.storage.get("entries", false);
-      entries = res && res.value ? JSON.parse(res.value) : [];
+      const raw = localStorage.getItem(STORAGE_KEY);
+      entries = raw ? JSON.parse(raw) : [];
     }catch(e){ entries = []; }
     try{
-      const res2 = await window.storage.get("theme", false);
-      theme = res2 && res2.value ? res2.value : "light";
+      const t = localStorage.getItem(THEME_KEY);
+      theme = t || "light";
     }catch(e){ theme = "light"; }
     applyTheme();
   }
   async function saveEntries(){
-    try{ await window.storage.set("entries", JSON.stringify(entries), false); }
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(entries)); }
     catch(e){ console.error("save failed", e); showToast("⚠️ Could not save — try again"); }
   }
   async function saveTheme(){
-    try{ await window.storage.set("theme", theme, false); }catch(e){}
+    try{ localStorage.setItem(THEME_KEY, theme); }catch(e){}
   }
 
   function applyTheme(){
